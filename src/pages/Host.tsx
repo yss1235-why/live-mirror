@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -13,7 +13,42 @@ export default function Host() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [targetUrl, setTargetUrl] = useState<string | null>(null);
   const [hostId] = useState(() => crypto.randomUUID());
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { sessionId: urlSessionId } = useParams(); // Get sessionId from URL
+
+  // Load existing session from URL on mount
+  useEffect(() => {
+    const loadSession = async () => {
+      if (urlSessionId) {
+        try {
+          const { data, error } = await supabase
+            .from("sessions")
+            .select("*")
+            .eq("id", urlSessionId)
+            .single();
+
+          if (error) throw error;
+
+          if (data) {
+            setSessionId(data.id);
+            setTargetUrl(data.url);
+            toast.success("Session restored");
+          } else {
+            toast.error("Session not found");
+            navigate("/");
+          }
+        } catch (error) {
+          console.error("Error loading session:", error);
+          toast.error("Failed to load session");
+          navigate("/");
+        }
+      }
+      setIsLoading(false);
+    };
+
+    loadSession();
+  }, [urlSessionId, navigate]);
 
   const createSession = async () => {
     if (!url) {
@@ -36,6 +71,10 @@ export default function Host() {
 
       setSessionId(data.id);
       setTargetUrl(data.url);
+      
+      // Navigate to the session URL so it persists on refresh
+      navigate(`/host/${data.id}`, { replace: true });
+      
       toast.success("Session created! Share the link with viewers.");
     } catch (error) {
       console.error("Error creating session:", error);
@@ -49,6 +88,35 @@ export default function Host() {
     navigator.clipboard.writeText(link);
     toast.success("Link copied to clipboard!");
   };
+
+  const endSession = async () => {
+    if (!sessionId) return;
+
+    try {
+      await supabase
+        .from("sessions")
+        .update({ active: false })
+        .eq("id", sessionId);
+      
+      toast.success("Session ended");
+      navigate("/");
+    } catch (error) {
+      console.error("Error ending session:", error);
+      navigate("/");
+    }
+  };
+
+  // Show loading while checking for existing session
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (sessionId && targetUrl) {
     return (
@@ -67,7 +135,7 @@ export default function Host() {
                 <Copy className="w-4 h-4 mr-2" />
                 Copy Link
               </Button>
-              <Button onClick={() => navigate("/")} variant="secondary" size="sm">
+              <Button onClick={endSession} variant="secondary" size="sm">
                 End Session
               </Button>
             </div>
