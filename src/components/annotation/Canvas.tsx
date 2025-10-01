@@ -308,13 +308,14 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
         className="absolute inset-0 w-full h-full border-0"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         title="Shared Browser"
+        style={{ zIndex: annotationMode ? 1 : 10 }} // Bring iframe to front when not annotating
       />
       <canvas
         ref={canvasRef}
         className="absolute inset-0"
         style={{ 
-          zIndex: 10, 
-          pointerEvents: (isHost && annotationMode) ? "auto" : "none" // KEY FIX!
+          zIndex: annotationMode ? 10 : 5, // Canvas on top when annotating, otherwise below iframe but visible
+          pointerEvents: (isHost && annotationMode) ? "auto" : "none"
         }}
       />
       {isHost && (
