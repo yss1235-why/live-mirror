@@ -10,35 +10,25 @@ All colors MUST be HSL.
   :root {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-
     --card: 240 10% 8%;
     --card-foreground: 0 0% 98%;
-
     --popover: 240 10% 8%;
     --popover-foreground: 0 0% 98%;
-
     --primary: 263 70% 50%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 263 70% 65%;
-
     --secondary: 217 91% 60%;
     --secondary-foreground: 0 0% 100%;
-
     --muted: 240 5% 25%;
     --muted-foreground: 240 5% 65%;
-
     --accent: 195 100% 50%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 240 10% 15%;
     --input: 240 10% 15%;
     --ring: 263 70% 50%;
-
     --radius: 0.75rem;
-
     --gradient-primary: linear-gradient(135deg, hsl(263 70% 50%), hsl(217 91% 60%));
     --gradient-accent: linear-gradient(135deg, hsl(195 100% 50%), hsl(263 70% 65%));
     --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
@@ -54,7 +44,6 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -82,5 +71,26 @@ All colors MUST be HSL.
   
   .transition-smooth {
     transition: var(--transition-smooth);
+  }
+}
+
+/* Click indicator animation */
+@keyframes ping {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}@keyframes ping {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
   }
 }
