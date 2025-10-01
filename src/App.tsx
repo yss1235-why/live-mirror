@@ -19,6 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/host" element={<Host />} />
+          <Route path="/host/:sessionId" element={<Host />} />
           <Route path="/view/:sessionId" element={<View />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
