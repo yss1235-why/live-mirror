@@ -17,8 +17,7 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [activeTool, setActiveTool] = useState<Tool>("select");
-  const [activeColor, setActiveColor] = useState("#FF00FF");
+  const [activeColor, setActiveColor] = useState("#000000"); // Changed to black
   const [annotationMode, setAnnotationMode] = useState(false); // NEW: Toggle for annotation mode
   const scrollSyncRef = useRef(false);
 
@@ -202,13 +201,13 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
     };
   }, [isHost]);
 
-  // Update tool behavior
+  // Update tool behavior - Always pen mode when annotation is on
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.isDrawingMode = activeTool === "pen" && annotationMode;
+    fabricCanvas.isDrawingMode = annotationMode;
     
-    if (activeTool === "pen" && annotationMode) {
+    if (annotationMode) {
       const brush = fabricCanvas.freeDrawingBrush as PencilBrush;
       brush.color = activeColor;
       brush.width = 3;
@@ -225,60 +224,9 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
         });
       });
     }
-  }, [activeTool, activeColor, fabricCanvas, isHost, annotationMode]);
+  }, [activeColor, fabricCanvas, isHost, annotationMode]);
 
-  const handleToolClick = (tool: Tool) => {
-    if (!isHost) return;
-    
-    // Enable annotation mode when selecting a tool
-    if (!annotationMode) {
-      setAnnotationMode(true);
-      toast.info("Annotation mode enabled");
-    }
-    
-    setActiveTool(tool);
-
-    if (tool === "circle" && fabricCanvas) {
-      const circle = new Circle({
-        left: 100,
-        top: 100,
-        radius: 50,
-        fill: "transparent",
-        stroke: activeColor,
-        strokeWidth: 3,
-      });
-      fabricCanvas.add(circle);
-      broadcastEvent("annotation", {
-        action: "add",
-        object: circle.toJSON(),
-      });
-    } else if (tool === "rectangle" && fabricCanvas) {
-      const rect = new Rect({
-        left: 100,
-        top: 100,
-        width: 100,
-        height: 100,
-        fill: "transparent",
-        stroke: activeColor,
-        strokeWidth: 3,
-      });
-      fabricCanvas.add(rect);
-      broadcastEvent("annotation", {
-        action: "add",
-        object: rect.toJSON(),
-      });
-    } else if (tool === "arrow" && fabricCanvas) {
-      const arrow = new Line([100, 100, 200, 200], {
-        stroke: activeColor,
-        strokeWidth: 3,
-      });
-      fabricCanvas.add(arrow);
-      broadcastEvent("annotation", {
-        action: "add",
-        object: arrow.toJSON(),
-      });
-    }
-  };
+  // Removed handleToolClick - no longer needed
 
   const handleClear = () => {
     if (!isHost || !fabricCanvas) return;
@@ -289,15 +237,21 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
     toast.success("Annotations cleared");
   };
 
-  // NEW: Toggle annotation mode
+  // Toggle annotation mode
   const toggleAnnotationMode = () => {
     setAnnotationMode(!annotationMode);
     if (annotationMode) {
-      setActiveTool("select");
       toast.info("Annotation mode disabled - You can now interact with the website");
     } else {
-      toast.info("Annotation mode enabled - Click a tool to annotate");
+      toast.info("Annotation mode enabled - Draw with pen");
     }
+  };
+
+  // Toggle color between black and white
+  const toggleColor = () => {
+    const newColor = activeColor === "#000000" ? "#FFFFFF" : "#000000";
+    setActiveColor(newColor);
+    toast.info(`Pen color: ${newColor === "#000000" ? "Black" : "White"}`);
   };
 
   return (
@@ -320,26 +274,40 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
       />
       {isHost && (
         <>
-          {/* NEW: Annotation mode toggle button */}
-          <button
-            onClick={toggleAnnotationMode}
-            className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${
-              annotationMode
-                ? "bg-purple-600 text-white hover:bg-purple-700"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            {annotationMode ? "🎨 Annotation Mode ON" : "🖱️ Browse Mode"}
-          </button>
-          
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-            <Toolbar
-              activeTool={activeTool}
-              onToolClick={handleToolClick}
-              onClear={handleClear}
-              activeColor={activeColor}
-              onColorChange={setActiveColor}
-            />
+          {/* Annotation mode toggle and controls */}
+          <div className="fixed top-4 right-4 z-50 flex gap-2">
+            <button
+              onClick={toggleAnnotationMode}
+              className={`px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${
+                annotationMode
+                  ? "bg-purple-600 text-white hover:bg-purple-700"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              {annotationMode ? "🎨 Drawing" : "🖱️ Browse"}
+            </button>
+            
+            {annotationMode && (
+              <>
+                <button
+                  onClick={toggleColor}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${
+                    activeColor === "#000000"
+                      ? "bg-black text-white hover:bg-gray-800"
+                      : "bg-white text-black border-2 border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  {activeColor === "#000000" ? "⚫ Black" : "⚪ White"}
+                </button>
+                
+                <button
+                  onClick={handleClear}
+                  className="px-4 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 transition-all shadow-lg"
+                >
+                  🗑️ Clear
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
