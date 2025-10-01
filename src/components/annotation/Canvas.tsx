@@ -19,6 +19,7 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [activeColor, setActiveColor] = useState("#FF00FF");
+  const [annotationMode, setAnnotationMode] = useState(false); // NEW: Toggle for annotation mode
   const scrollSyncRef = useRef(false);
 
   // Initialize Fabric canvas
@@ -205,16 +206,16 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.isDrawingMode = activeTool === "pen";
+    fabricCanvas.isDrawingMode = activeTool === "pen" && annotationMode;
     
-    if (activeTool === "pen") {
+    if (activeTool === "pen" && annotationMode) {
       const brush = fabricCanvas.freeDrawingBrush as PencilBrush;
       brush.color = activeColor;
       brush.width = 3;
     }
 
     // Add event listeners for object creation
-    if (isHost) {
+    if (isHost && annotationMode) {
       fabricCanvas.off("path:created");
       fabricCanvas.on("path:created", (e: any) => {
         const path = e.path;
@@ -224,10 +225,17 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
         });
       });
     }
-  }, [activeTool, activeColor, fabricCanvas, isHost]);
+  }, [activeTool, activeColor, fabricCanvas, isHost, annotationMode]);
 
   const handleToolClick = (tool: Tool) => {
     if (!isHost) return;
+    
+    // Enable annotation mode when selecting a tool
+    if (!annotationMode) {
+      setAnnotationMode(true);
+      toast.info("Annotation mode enabled");
+    }
+    
     setActiveTool(tool);
 
     if (tool === "circle" && fabricCanvas) {
@@ -281,6 +289,17 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
     toast.success("Annotations cleared");
   };
 
+  // NEW: Toggle annotation mode
+  const toggleAnnotationMode = () => {
+    setAnnotationMode(!annotationMode);
+    if (annotationMode) {
+      setActiveTool("select");
+      toast.info("Annotation mode disabled - You can now interact with the website");
+    } else {
+      toast.info("Annotation mode enabled - Click a tool to annotate");
+    }
+  };
+
   return (
     <div className="relative w-full" style={{ height: "calc(100vh - 64px)" }}>
       <iframe
@@ -292,19 +311,36 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
       />
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 pointer-events-auto"
-        style={{ zIndex: 10, pointerEvents: isHost ? "auto" : "none" }}
+        className="absolute inset-0"
+        style={{ 
+          zIndex: 10, 
+          pointerEvents: (isHost && annotationMode) ? "auto" : "none" // KEY FIX!
+        }}
       />
       {isHost && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-          <Toolbar
-            activeTool={activeTool}
-            onToolClick={handleToolClick}
-            onClear={handleClear}
-            activeColor={activeColor}
-            onColorChange={setActiveColor}
-          />
-        </div>
+        <>
+          {/* NEW: Annotation mode toggle button */}
+          <button
+            onClick={toggleAnnotationMode}
+            className={`absolute top-4 right-4 z-20 px-4 py-2 rounded-lg font-medium transition-all ${
+              annotationMode
+                ? "bg-purple-600 text-white hover:bg-purple-700"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            {annotationMode ? "🎨 Annotation Mode ON" : "🖱️ Browse Mode"}
+          </button>
+          
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+            <Toolbar
+              activeTool={activeTool}
+              onToolClick={handleToolClick}
+              onClear={handleClear}
+              activeColor={activeColor}
+              onColorChange={setActiveColor}
+            />
+          </div>
+        </>
       )}
     </div>
   );
