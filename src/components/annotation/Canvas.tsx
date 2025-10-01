@@ -323,7 +323,7 @@ export const Canvas = ({ sessionId, targetUrl, isHost, hostId }: CanvasProps) =>
           {/* NEW: Annotation mode toggle button */}
           <button
             onClick={toggleAnnotationMode}
-            className={`absolute top-4 right-4 z-20 px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${
               annotationMode
                 ? "bg-purple-600 text-white hover:bg-purple-700"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
